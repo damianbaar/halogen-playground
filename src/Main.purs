@@ -7,10 +7,14 @@ import Component (component)
 import Control.Monad.Eff (Eff)
 import Control.Monad.Eff.Console (CONSOLE, log)
 import Control.Monad.Eff.Exception (EXCEPTION, error, catchException, throwException)
+import DOM.HTML.HTMLFormElement (method)
+import Data.Either (Either(..))
+import Data.HTTP.Method (Method(..))
 import Data.Maybe (Maybe(..))
+import Halogen as H
 import Halogen.Aff as HA
 import Halogen.VDom.Driver (runUI)
-import Halogen as H
+import Network.HTTP.Affjax (AJAX, affjax, defaultRequest)
 
 examplePerson :: Person
 examplePerson =
@@ -23,17 +27,7 @@ examplePerson =
 emptyPerson :: Person
 emptyPerson = person "" "" (address "" "" "") []
 
--- Notice that there is no EXCEPTION effect
--- main :: forall eff. Eff (console :: CONSOLE, fs :: FS | eff) Unit
--- main = do
---   result <- try (readTextFile UTF8 "README.md")
---   case result of
---     Right lines ->
---       Console.log ("README: \n" <> lines )
---     Left error ->
---       Console.error ("Couldn't open README.md. Error was: " <> show error)
-
-safeDivide :: forall eff. Int -> Int -> Eff (exception :: EXCEPTION | eff) Int
+safeDivide :: forall eff. Int -> Int -> Eff (exception :: EXCEPTION, ajax :: AJAX | eff) Int
 safeDivide a b = case a `mod` b of
   0 -> pure (a/b)
   _ -> throwException $ error "Denominator does not divide numerator"
@@ -41,21 +35,26 @@ safeDivide a b = case a `mod` b of
 -- if eff is not extensible then liftEff does not work! yay!
 -- safeDivideTest :: Number -> Number -> Eff (console:: CONSOLE) Unit
 
-safeDivideTest :: forall eff. Int -> Int -> Eff (console:: CONSOLE | eff) Unit
+safeDivideTest :: forall eff. Int -> Int -> Eff (console:: CONSOLE, ajax :: AJAX | eff) Unit
 safeDivideTest a b = catchException (log <<< show) $ safeDivide a b >>= (log <<< show)
 
 -- log $ showFullName "a" "b" "c"
 -- showFullName "a" "b" "c" # log
--- showFullName <$> Just "a" 
---               <*> Just "b" 
---               <*> Just "c" 
---               # show 
---               # log
 
-main :: Eff (HA.HalogenEffects (console :: CONSOLE)) Unit
+main :: forall e. Eff (HA.HalogenEffects (console :: CONSOLE, ajax :: AJAX | e)) Unit
 main = HA.runHalogenAff do
+  res <- affjax $ defaultRequest { url = "/api", method = Left GET }
   body <- HA.awaitBody
+
   H.liftEff $ fullNameEither (Just "a") (Just "d") (Just "c") # show # log
+  H.liftEff $ log $ "GET /api response: " <> res.response
+
+  showFullName <$> Just "a" 
+               <*> Just "b" 
+               <*> Just "234234234" 
+               # show 
+               # log
+               # H.liftEff
 
   safeDivideTest 1 1 # H.liftEff
   H.liftEff $ safeDivideTest 0 0

@@ -9,10 +9,14 @@
     "dist"
   ],
   "dependencies": {
-    "purescript-console": "^3.0.0",
-    "purescript-halogen": "^2.0.0",
-    "purescript-exceptions": "^3.1.0",
-    "purescript-validation": "^3.2.0",
-    "purescript-control": "^3.3.1"
+    "purescript-console": "latest",
+    "purescript-halogen": "^3.0.1",
+    "purescript-exceptions": "latest",
+    "purescript-validation": "latest",
+    "purescript-control": "latest",
+    "purescript-affjax": "^5.0.0"
+  },
+  "devDependencies": {
+    "purescript-psci-support": "latest"
   }
 }
